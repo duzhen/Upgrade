@@ -18,8 +18,8 @@ public interface CampsiteMapper {
     @Select("SELECT * FROM `campsite` WHERE id = #{id}")
     Campsite getCampsite(@Param("id") int id);
     
-    @Select("SELECT * FROM `schedule` WHERE camp_id = #{id} AND book_date > #{date}")
-    List<Schedule> getSchedule(@Param("id") int id, @Param("date") int date);
+    @Select("SELECT * FROM `schedule` WHERE camp_id = #{id} AND book_date > #{start}")
+    List<Schedule> getSchedule(@Param("id") int id, @Param("start") int start);
     
 //    @Select("SELECT LAST_INSERT_ID()")
 //    int getLastBooking();

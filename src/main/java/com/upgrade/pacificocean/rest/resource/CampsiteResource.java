@@ -1,6 +1,5 @@
 package com.upgrade.pacificocean.rest.resource;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -20,11 +19,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.upgrade.pacificocean.dao.CampsiteMapper;
 import com.upgrade.pacificocean.domain.Booking;
 import com.upgrade.pacificocean.domain.Campsite;
 import com.upgrade.pacificocean.domain.Schedule;
 import com.upgrade.pacificocean.domain.Slots;
+import com.upgrade.pacificocean.service.CampsiteService;
 import com.upgrade.pacificocean.utils.Utils;
 
 @Component
@@ -34,19 +33,19 @@ public class CampsiteResource {
 	private Logger logger = LoggerFactory.getLogger(this.getClass());
 	
 	@Autowired
-    private CampsiteMapper campsiteMapper;
+    private CampsiteService campsiteService;
 	
     @GET
     @Path("campsite/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCampsiteById(@PathParam("id") Integer id) {
-    	int today = Utils.today();
-    	logger.info("id:"+id + " today:"+today);
-    	Campsite camp = campsiteMapper.getCampsite(id);
+    	int start = Utils.today();
+    	logger.info("id:"+id + " today:"+start);
+    	Campsite camp = campsiteService.getCampsite(id);
     	if(camp == null) {
     		return Response.status(404).build();
     	}
-    	List<Schedule> schedule = campsiteMapper.getSchedule(id, today);
+    	List<Schedule> schedule = campsiteService.getSchedule(id, start);
     	Slots slots = Utils.getMonthSlot(schedule);
 //    	logger.info("slots size:"+slots.size());
 //    	for (Slot s:slots) {
@@ -59,11 +58,11 @@ public class CampsiteResource {
     @Path("booking/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getBookingById(@PathParam("id") Integer id) {
-    	Booking order = campsiteMapper.getBooking(id);
-    	if(order == null) {
+    	Booking booking = campsiteService.getBooking(id);
+    	if(booking == null) {
     		return Response.status(404).build();
     	}
-    	return Response.status(200).entity(order).build();
+    	return Response.status(200).entity(booking).build();
     }
 
     @POST
@@ -72,8 +71,12 @@ public class CampsiteResource {
     public Response booking(@FormParam("id") Integer id, @FormParam("name") String name, @FormParam("email") String email,
     		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) throws URISyntaxException {
     	logger.info("id:"+id + "name:"+name + "email:"+email + "start_date:" + start_date + "end_date:" + end_date  );
-    	campsiteMapper.createBooking(id, name, email, 1, start_date, end_date);
-    	return Response.created(new URI("/booking/"+id)).build();
+    	Booking booking = campsiteService.createBooking(id, name, email, 1, start_date, end_date);
+    	if(booking == null) {
+    		return Response.status(404).build();
+    	}
+    	return Response.status(200).entity(booking).build();
+//    	return Response.created(new URI("/booking/"+id)).build();
     }
 
     @PUT
@@ -82,15 +85,18 @@ public class CampsiteResource {
     public Response updateBooking(@PathParam("id") Integer id, @FormParam("name") String name, @FormParam("email") String email,
     		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date, 
     		@FormParam("cancelled") boolean cancelled) throws URISyntaxException {
-    	campsiteMapper.updateBooking(id, name, email, start_date, end_date, cancelled);
-    	return Response.created(new URI("/booking/"+id)).build();
+    	Booking booking = campsiteService.updateBooking(id, name, email, start_date, end_date, cancelled);
+    	if(booking == null) {
+    		return Response.status(404).build();
+    	}
+    	return Response.status(200).entity(booking).build();
     }
     
     @DELETE
     @Path("booking/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteBooking(@PathParam("id") Integer id) {
-    	campsiteMapper.deleteBooking(id);
+    	campsiteService.deleteBooking(id);
     	return Response.ok().build();
     }
 }
