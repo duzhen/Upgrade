@@ -24,6 +24,7 @@ import com.upgrade.pacificocean.domain.Campsite;
 import com.upgrade.pacificocean.domain.Schedule;
 import com.upgrade.pacificocean.domain.Slots;
 import com.upgrade.pacificocean.service.CampsiteService;
+import com.upgrade.pacificocean.service.RedisIDService;
 import com.upgrade.pacificocean.utils.Utils;
 
 @Component
@@ -34,6 +35,8 @@ public class CampsiteResource {
 	
 	@Autowired
     private CampsiteService campsiteService;
+	@Autowired
+	private RedisIDService idService;
 	
     @GET
     @Path("campsite/{id}")
@@ -68,9 +71,10 @@ public class CampsiteResource {
     @POST
     @Path("booking")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response booking(@FormParam("id") Integer id, @FormParam("name") String name, @FormParam("email") String email,
+    public Response booking(@FormParam("name") String name, @FormParam("email") String email,
     		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) throws URISyntaxException {
-    	logger.info("id:"+id + "name:"+name + "email:"+email + "start_date:" + start_date + "end_date:" + end_date  );
+    	logger.info("name:"+name + "email:"+email + "start_date:" + start_date + "end_date:" + end_date);
+    	int id = idService.getNextID();
     	Booking booking = campsiteService.createBooking(id, name, email, 1, start_date, end_date);
     	if(booking == null) {
     		return Response.status(404).build();
