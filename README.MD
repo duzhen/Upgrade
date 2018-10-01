@@ -8,9 +8,10 @@
 
 ## Environment Prepare
 ```
-./mysql -u root -p
-./mysql create database upgrade
-./mysql -u root -p upgrade < upgrade.sql
+mysql -u root -p
+create database upgrade
+exit
+mysql -u root -p upgrade < upgrade.sql
 
 ./redis-server
 ```
@@ -33,7 +34,7 @@ mvn test
  # Build docker
  ```
  mvn package docker:build -Dmaven.test.skip=true
- docker run -p 8080:8080 -t upgrade/pacific-ocean
+ docker run --network=host -p 8080:8080 -t upgrade/pacific-ocean
  ```
  
  # AWS Demo
