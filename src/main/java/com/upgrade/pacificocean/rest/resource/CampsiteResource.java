@@ -1,7 +1,6 @@
 package com.upgrade.pacificocean.rest.resource;
 
 import java.net.URISyntaxException;
-import java.util.List;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.FormParam;
@@ -11,6 +10,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import com.upgrade.pacificocean.domain.Booking;
 import com.upgrade.pacificocean.domain.Campsite;
-import com.upgrade.pacificocean.domain.Schedule;
 import com.upgrade.pacificocean.domain.Slots;
 import com.upgrade.pacificocean.service.CampsiteService;
 import com.upgrade.pacificocean.service.RedisIDService;
@@ -41,19 +40,18 @@ public class CampsiteResource {
     @GET
     @Path("campsite/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getCampsiteById(@PathParam("id") Integer id) {
-    	int start = Utils.today();
-    	logger.info("id:"+id + " today:"+start);
+    public Response getCampsiteSchedule(@PathParam("id") Integer id, @QueryParam("start") Integer start, @QueryParam("end") Integer end) {
     	Campsite camp = campsiteService.getCampsite(id);
     	if(camp == null) {
     		return Response.status(404).build();
     	}
-    	List<Schedule> schedule = campsiteService.getSchedule(id, start);
-    	Slots slots = Utils.getMonthSlot(schedule);
-//    	logger.info("slots size:"+slots.size());
-//    	for (Slot s:slots) {
-//    		logger.info(s.toString());
-//    	}
+    	if(start == null) {
+    		start = Utils.getTomorrow();
+    	}
+    	if(end == null) {
+    		end = Utils.getNextMonth();
+    	}
+    	Slots slots = campsiteService.getSchedule(id, start, end);
     	return Response.status(200).entity(slots).build();
     }
 
@@ -72,7 +70,7 @@ public class CampsiteResource {
     @Path("booking")
     @Produces(MediaType.APPLICATION_JSON)
     public Response booking(@FormParam("name") String name, @FormParam("email") String email,
-    		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) throws URISyntaxException {
+    		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) {
     	logger.info("name:"+name + "email:"+email + "start_date:" + start_date + "end_date:" + end_date);
     	int id = idService.getNextID();
     	Booking booking = campsiteService.createBooking(id, name, email, 1, start_date, end_date);
@@ -101,6 +99,7 @@ public class CampsiteResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response deleteBooking(@PathParam("id") Integer id) {
     	campsiteService.deleteBooking(id);
+    	campsiteService.refreshScheduleCache();
     	return Response.ok().build();
     }
 }

@@ -14,6 +14,8 @@ import com.upgrade.pacificocean.dao.CampsiteMapper;
 import com.upgrade.pacificocean.domain.Booking;
 import com.upgrade.pacificocean.domain.Campsite;
 import com.upgrade.pacificocean.domain.Schedule;
+import com.upgrade.pacificocean.domain.Slots;
+import com.upgrade.pacificocean.utils.Utils;
 
 @Service
 @CacheConfig(cacheNames="campsiteCache")
@@ -27,9 +29,21 @@ public class CampsiteService {
     	return campsiteMapper.getCampsite(id);
     }
     
-    @Cacheable(value="schedule", key = "#p0 + #p1 + #p2")
-    public List<Schedule> getSchedule(int id, int start) {
-    	return campsiteMapper.getSchedule(id, start);
+    @Cacheable(value="schedule")
+    public Slots getSchedule(int id, int start, int end) {
+    	if(start == 0) {
+    		start = Utils.getTomorrow();
+    	}
+    	if(end == 0) {
+    		end = Utils.getNextMonth();
+    	}
+    	List<Schedule> schedule =  campsiteMapper.getSchedule(id, start, end);
+    	Slots slots = Utils.getSlot(schedule, start, end);
+//    	logger.info("slots size:"+slots.size());
+//    	for (Slot s:slots) {
+//    		logger.info(s.toString());
+//    	}
+    	return slots;
     }
     
     @Cacheable(value="booking", key = "#p0")
@@ -38,20 +52,26 @@ public class CampsiteService {
     }
     
     @CachePut(value="booking", key = "#p0")
+    @CacheEvict(value="schedule", allEntries=true)
     public Booking createBooking(int id, String name, String email, int camp_id, int start_date, int end_date) {
     	campsiteMapper.createBooking(id, name, email, camp_id, start_date, end_date);
     	return campsiteMapper.getBooking(id);
     }
     
     @CachePut(value="booking", key = "#p0")
+    @CacheEvict(value="schedule", allEntries=true)
     public Booking updateBooking(int id, String name, String email, int start_date, int end_date, boolean cancelled) {
     	campsiteMapper.updateBooking(id, name, email, start_date, end_date, cancelled);
     	return campsiteMapper.getBooking(id);
     }
     
-    @CacheEvict(key="booking" + "#p0")
+    @CacheEvict(value="booking", key = "#p0")
     public void deleteBooking(int id) {
     	campsiteMapper.deleteBooking(id);
     }
 
+    @CacheEvict(value="schedule", allEntries=true)
+    public void refreshScheduleCache() {
+    	
+    }
 }

@@ -1,6 +1,7 @@
 package com.upgrade.pacificocean.utils;
 
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -26,11 +27,37 @@ public class Utils {
 		return Integer.valueOf(strDate);
 	}
 	
+	public static int getTomorrow() {
+		Calendar c = Calendar.getInstance();
+		c.add(Calendar.DATE, 1);
+		Date date = c.getTime();
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+		String strDate = dateFormat.format(date);
+		
+		return Integer.valueOf(strDate);
+	}
+	
+	public static int getNextMonth() {
+		Calendar c = Calendar.getInstance();
+		c.add(Calendar.MONTH, 1);
+		Date date = c.getTime();
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+		String strDate = dateFormat.format(date);
+		
+		return Integer.valueOf(strDate);
+	}
+	
 	public static int getDayInt(Date date) {
 		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
 		String strDate = dateFormat.format(date);
 		
 		return Integer.valueOf(strDate);
+	}
+	
+	private static Date getDateByInt(int date) throws ParseException {
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
+		return dateFormat.parse(String.valueOf(date));
 	}
 	
 	private static boolean checkAvailable(int day, List<Schedule> schedule) {
@@ -42,6 +69,43 @@ public class Utils {
 		
 		return true;
 	}
+	
+	public static Slots getSlot(List<Schedule> schedule, int start, int end) {
+		List<Slot> slots = new ArrayList<Slot>();
+		
+		Date startDate;
+		try {
+			startDate = getDateByInt(start);
+		} catch (ParseException e) {
+			Calendar s = Calendar.getInstance();
+			s.add(Calendar.DATE, 1);
+			startDate = s.getTime();
+		}
+		logger.info("start:" + startDate.toString());
+		Date endDate;
+		try {
+			endDate = getDateByInt(end);
+		} catch (ParseException e1) {
+			Calendar e = Calendar.getInstance();
+			e.add(Calendar.MONTH, 1);
+			endDate = e.getTime();
+		}
+		logger.info("end:" + endDate.toString());
+		
+		for(Date i=startDate;!i.after(endDate);) {
+			if(checkAvailable(getDayInt(i), schedule)) {
+				slots.add(new Slot(getDayInt(i), true));
+			}
+			Calendar c = Calendar.getInstance();
+			c.setTime(i);
+			c.add(Calendar.DATE, 1);
+			i = c.getTime();
+//			logger.info("loop:" + i.toString());
+		}
+		
+		return new Slots(slots);
+	}
+		
 	public static Slots getMonthSlot(List<Schedule> schedule) {
 		List<Slot> slots = new ArrayList<Slot>();
 		Calendar start = Calendar.getInstance();
