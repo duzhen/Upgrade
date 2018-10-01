@@ -34,6 +34,10 @@ public class Booking implements Serializable {
 	private Date check_out;
 	@XmlElement
 	private boolean cancelled;
+	
+	public int getId() {
+		return id;
+	}
 	public String getName() {
 		return name;
 	}

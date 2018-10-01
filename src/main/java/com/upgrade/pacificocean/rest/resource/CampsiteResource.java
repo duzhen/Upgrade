@@ -17,10 +17,12 @@ import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
 
 import com.upgrade.pacificocean.domain.Booking;
 import com.upgrade.pacificocean.domain.Campsite;
+import com.upgrade.pacificocean.domain.RestResult;
 import com.upgrade.pacificocean.domain.Slots;
 import com.upgrade.pacificocean.service.CampsiteService;
 import com.upgrade.pacificocean.service.RedisIDService;
@@ -43,7 +45,7 @@ public class CampsiteResource {
     public Response getCampsiteSchedule(@PathParam("id") Integer id, @QueryParam("start") Integer start, @QueryParam("end") Integer end) {
     	Campsite camp = campsiteService.getCampsite(id);
     	if(camp == null) {
-    		return Response.status(404).build();
+    		return Response.ok().entity(new RestResult(404, "no campsite id", null)).build();
     	}
     	if(start == null) {
     		start = Utils.getTomorrow();
@@ -52,7 +54,7 @@ public class CampsiteResource {
     		end = Utils.getNextMonth();
     	}
     	Slots slots = campsiteService.getSchedule(id, start, end);
-    	return Response.status(200).entity(slots).build();
+    	return Response.ok().entity(new RestResult(200, "suceess", slots)).build();
     }
 
     @GET
@@ -61,9 +63,9 @@ public class CampsiteResource {
     public Response getBookingById(@PathParam("id") Integer id) {
     	Booking booking = campsiteService.getBooking(id);
     	if(booking == null) {
-    		return Response.status(404).build();
+    		return Response.ok().entity(new RestResult(404, "no booking id", null)).build();
     	}
-    	return Response.status(200).entity(booking).build();
+    	return Response.ok().entity(new RestResult(200, "suceess", booking)).build();
     }
 
     @POST
@@ -72,26 +74,40 @@ public class CampsiteResource {
     public Response booking(@FormParam("name") String name, @FormParam("email") String email,
     		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) {
     	logger.info("name:"+name + "email:"+email + "start_date:" + start_date + "end_date:" + end_date);
-    	int id = idService.getNextID();
-    	Booking booking = campsiteService.createBooking(id, name, email, 1, start_date, end_date);
-    	if(booking == null) {
-    		return Response.status(404).build();
+    	if(!Utils.checkDate(start_date, end_date)) {
+    		return Response.ok().entity(new RestResult(400, "invalid booking date", null)).build();
     	}
-    	return Response.status(200).entity(booking).build();
-//    	return Response.created(new URI("/booking/"+id)).build();
+    	int id = idService.getNextID();
+    	try {
+    		Booking booking = campsiteService.createBooking(id, name, email, 1, start_date, end_date);
+    		if(booking == null) {
+    			return Response.ok().entity(new RestResult(400, "booking failed", null)).build();
+        	}
+    		return Response.ok().entity(new RestResult(200, "booking suceess", booking)).build();
+    	} catch(DataAccessException e) {
+    		logger.error(e.getCause().getLocalizedMessage());
+    		return Response.ok().entity(new RestResult(400, e.getCause().getLocalizedMessage(), null)).build();
+		}
     }
 
     @PUT
     @Path("booking/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateBooking(@PathParam("id") Integer id, @FormParam("name") String name, @FormParam("email") String email,
-    		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date, 
-    		@FormParam("cancelled") boolean cancelled) throws URISyntaxException {
-    	Booking booking = campsiteService.updateBooking(id, name, email, start_date, end_date, cancelled);
-    	if(booking == null) {
-    		return Response.status(404).build();
+    		@FormParam("start_date") int start_date, @FormParam("end_date") int end_date) throws URISyntaxException {
+    	if(!Utils.checkDate(start_date, end_date)) {
+    		return Response.ok().entity(new RestResult(400, "invalid booking date", null)).build();
     	}
-    	return Response.status(200).entity(booking).build();
+    	try {
+	    	Booking booking = campsiteService.updateBooking(id, name, email, start_date, end_date);
+	    	if(booking == null) {
+	    		return Response.ok().entity(new RestResult(400, "no booking id", null)).build();
+	    	}
+	    	return Response.ok().entity(new RestResult(200, "update suceess", booking)).build();
+    	} catch(DataAccessException e) {
+    		logger.error(e.getCause().getLocalizedMessage());
+    		return Response.ok().entity(new RestResult(400, e.getCause().getLocalizedMessage(), null)).build();
+		}
     }
     
     @DELETE
@@ -100,6 +116,6 @@ public class CampsiteResource {
     public Response deleteBooking(@PathParam("id") Integer id) {
     	campsiteService.deleteBooking(id);
     	campsiteService.refreshScheduleCache();
-    	return Response.ok().build();
+    	return Response.ok().entity(new RestResult(200, "suceess", null)).build();
     }
 }

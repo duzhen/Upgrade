@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 30, 2018 at 06:29 AM
+-- Generation Time: Oct 01, 2018 at 03:43 AM
 -- Server version: 5.6.41-log
 -- PHP Version: 5.6.37
 
@@ -67,7 +67,7 @@ INSERT INTO `campsite` (`id`, `name`) VALUES
 CREATE TABLE `schedule` (
   `id` int(11) NOT NULL,
   `camp_id` int(11) NOT NULL,
-  `book_date` date NOT NULL,
+  `book_date` int(11) NOT NULL,
   `booking_id` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -108,6 +108,12 @@ ALTER TABLE `campsite`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
+-- AUTO_INCREMENT for table `schedule`
+--
+ALTER TABLE `schedule`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- Constraints for dumped tables
 --
 
@@ -121,8 +127,8 @@ ALTER TABLE `booking`
 -- Constraints for table `schedule`
 --
 ALTER TABLE `schedule`
-  ADD CONSTRAINT `s_camp_id` FOREIGN KEY (`camp_id`) REFERENCES `campsite` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE,
-  ADD CONSTRAINT `s_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
+  ADD CONSTRAINT `s_booking_id` FOREIGN KEY (`booking_id`) REFERENCES `booking` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `s_camp_id` FOREIGN KEY (`camp_id`) REFERENCES `campsite` (`id`) ON DELETE NO ACTION ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,40 @@ public class Utils {
 		String strDate = dateFormat.format(date);
 		
 		return Integer.valueOf(strDate);
+	}
+	
+	public static int getNextDays(int days) {
+		Calendar c = Calendar.getInstance();
+		c.add(Calendar.DATE, days);
+		Date date = c.getTime();
+		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+		String strDate = dateFormat.format(date);
+		
+		return Integer.valueOf(strDate);
+	}
+	
+	public static int getDiffDay(int start, int end) {
+		try {
+			Date s = getDateByInt(start);
+			Date e = getDateByInt(end);
+			
+			return (int)((e.getTime() - s.getTime())/(24*3600*1000));
+		} catch (ParseException e) {
+			return -1;
+		}
+	}
+	
+	public static boolean checkDate(int start_date, int end_date) {
+		int tomorrow = getTomorrow();
+		int nextMonth = getNextMonth();
+		if(start_date > end_date || start_date < tomorrow || end_date > nextMonth) {
+			return false;
+		}
+		int diff = getDiffDay(start_date, end_date);
+		if(diff < 0 || diff > 2) {
+			return false;
+		}
+		return true;
 	}
 	
 	public static int getNextMonth() {
@@ -93,9 +128,7 @@ public class Utils {
 		logger.info("end:" + endDate.toString());
 		
 		for(Date i=startDate;!i.after(endDate);) {
-			if(checkAvailable(getDayInt(i), schedule)) {
-				slots.add(new Slot(getDayInt(i), true));
-			}
+			slots.add(new Slot(getDayInt(i), checkAvailable(getDayInt(i), schedule)));
 			Calendar c = Calendar.getInstance();
 			c.setTime(i);
 			c.add(Calendar.DATE, 1);
@@ -104,6 +137,36 @@ public class Utils {
 		}
 		
 		return new Slots(slots);
+	}
+	
+	public static List<Schedule> getSchedule( int camp_id, int booking_id, int start, int end) {
+		List<Schedule> schedules = new ArrayList<Schedule>();
+		
+		Date startDate;
+		try {
+			startDate = getDateByInt(start);
+		} catch (ParseException e) {
+			return null;
+		}
+//		logger.info("start:" + startDate.toString());
+		Date endDate;
+		try {
+			endDate = getDateByInt(end);
+		} catch (ParseException e1) {
+			return null;
+		}
+//		logger.info("end:" + endDate.toString());
+		
+		for(Date i=startDate;!i.after(endDate);) {
+			schedules.add(new Schedule(0, camp_id, getDayInt(i), booking_id));
+			Calendar c = Calendar.getInstance();
+			c.setTime(i);
+			c.add(Calendar.DATE, 1);
+			i = c.getTime();
+//			logger.info("loop:" + i.toString());
+		}
+		
+		return schedules;
 	}
 		
 	public static Slots getMonthSlot(List<Schedule> schedule) {
@@ -130,5 +193,13 @@ public class Utils {
 		}
 		
 		return new Slots(slots);
+	}
+	
+	public static void randomSleep(int bound) {
+		try {
+			Thread.sleep(new Random().nextInt(bound));
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 }
