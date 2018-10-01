@@ -33,6 +33,7 @@ mvn test
  # Build docker
  ```
  mvn package docker:build -Dmaven.test.skip=true
+ docker run -p 8080:8080 -t upgrade/pacific-ocean
  ```
  
  # AWS Demo
