@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/duzhen/Upgrade.svg?branch=master)](https://travis-ci.org/duzhen/Upgrade)
+
 # Dependency
 * Spring Boot
 * Java 8
